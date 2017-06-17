@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  jupyter-app:
+    image: jupyter
+    build: ./jupyter-node
+    ports:
+      - "5000:5000"
+    links: 
+      - mongodb-app
+
+  mongodb-app:
+    image: mongo
+    build: ./mongodb-node
+    ports:
+      - "27017:3000"
