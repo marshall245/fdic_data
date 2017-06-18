@@ -63,6 +63,11 @@ class MDRMInfoETL(object):
         assert mongo_collection.count() == 0
         mongo_collection.insert_many(data)
 
+    def full_etl(self, mongo_collection):
+        """run a full etl job against a mongo_collection"""
+        transformed = self.transform()
+        self.load(mongo_collection, transformed)
+
 
 class FDICDataETLBase(object):
     
@@ -141,6 +146,11 @@ class FDICDataETLBase(object):
     
     def load(self, mongo_collection, data):
         raise AttributeError("not implemented")
+
+    def full_etl(self, mongo_collection):
+        """run a full etl job against a mongo_collection"""
+        transformed = self.transform()
+        self.load(mongo_collection, transformed)
     
 
 class FDICDataETL(FDICDataETLBase):
