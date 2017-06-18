@@ -172,32 +172,6 @@ class FDICDataETL(FDICDataETLBase):
         
         return top
 
-    # def remove_nans(self, dct):
-    #     """drop all key: values in a dictionary where the value is float('nan')"""
-    #     for key, value in dct.items():
-    #         if isinstance(value, dict):
-    #             self.remove_nans(value)
-    #         elif (value is None) or (isinstance(value, (float, int)) and math.isnan(value)):
-    #             dct.pop(key)
-
-    # def remove_nans(self, dct):
-    #     """drop all key: values in a dictionary where the value is float('nan')"""
-    #     def _go(dct, newdct):
-    #         # this function recursively mutates newdct building up 
-    #         # the values of dct that are not nan or empty
-    #         for key, value in dct.items():
-    #             if isinstance(value, dict):
-    #                 newdct[key] = dict()
-    #                 _go(value, newdct[key])
-    #             else:
-    #                 if value and not (isinstance(value, (float, int)) and math.isnan(value)):
-    #                     newdct[key] = value
-
-    #     return_dct = dict()
-    #     _go(dct, return_dct)
-
-    #     return return_dct
-
     def prep_update(self, dctold, dctnew):
         """mutate dctold overwriting the values that are contained in dctnew
         which are not null
