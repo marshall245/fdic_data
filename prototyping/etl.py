@@ -172,20 +172,47 @@ class FDICDataETL(FDICDataETLBase):
         
         return top
 
-    @staticmethod
-    def remove_nans(dct):
-        """drop all key: values in a dictionary where the value is float('nan')"""
-        for key, value in dct.iteritems():
+    # def remove_nans(self, dct):
+    #     """drop all key: values in a dictionary where the value is float('nan')"""
+    #     for key, value in dct.items():
+    #         if isinstance(value, dict):
+    #             self.remove_nans(value)
+    #         elif (value is None) or (isinstance(value, (float, int)) and math.isnan(value)):
+    #             dct.pop(key)
+
+    # def remove_nans(self, dct):
+    #     """drop all key: values in a dictionary where the value is float('nan')"""
+    #     def _go(dct, newdct):
+    #         # this function recursively mutates newdct building up 
+    #         # the values of dct that are not nan or empty
+    #         for key, value in dct.items():
+    #             if isinstance(value, dict):
+    #                 newdct[key] = dict()
+    #                 _go(value, newdct[key])
+    #             else:
+    #                 if value and not (isinstance(value, (float, int)) and math.isnan(value)):
+    #                     newdct[key] = value
+
+    #     return_dct = dict()
+    #     _go(dct, return_dct)
+
+    #     return return_dct
+
+    def prep_update(self, dctold, dctnew):
+        """mutate dctold overwriting the values that are contained in dctnew
+        which are not null
+        """
+        for key, value in dctnew.items():
             if isinstance(value, dict):
-                remove_nans(value)
-            elif math.isnan(value):
-                dct.pop(key)
+                self.prep_update(dctold[key], value)
+            elif value and not (isinstance(value, (int, float)) and math.isnan(value)):
+                dctold[key] = value
 
     @staticmethod
     def build_prototype(obs_list, fdic_id_key, date_key):
-        """build prototype for quering against"""
-        fdic_ids = tuple({'$in': {item[fdic_id_key] for item in obs_list}})
-        datestrings = tuple({'$in': {item[date_key] for item in obs_list}})
+        """build prototype for querying collection"""
+        fdic_ids = {'$in': list({item[fdic_id_key] for item in obs_list})}
+        datestrings = {'$in': list({item[date_key] for item in obs_list})}
 
         prototype_doc = {
             fdic_id_key: fdic_ids,
@@ -194,10 +221,13 @@ class FDICDataETL(FDICDataETLBase):
 
         return prototype_doc
 
-    def update_obs(mongo_collection, obs, fdic_id_key, date_key):
+    def update_obs(self, mongo_collection, obs, fdic_id_key, date_key):
         """find and update an observation in a mongodb collection"""
         proto_doc = {fdic_id_key: obs[fdic_id_key], date_key: obs[date_key]}
-        mongo_collection.find_one_and_update(proto_doc, obs)
+        oldobs = mongo_collection.find_one(proto_doc)
+        self.prep_update(oldobs, obs)
+        insert_obs = {'$set': oldobs}
+        mongo_collection.find_one_and_update(proto_doc, insert_obs)
 
     def load(self, mongo_collection, obs_list):
         """load data to mongo database collection adjusting for update vs insert"""
@@ -211,7 +241,6 @@ class FDICDataETL(FDICDataETLBase):
 
         for obs in obs_list:
             if (obs[fdic_id_key], obs[date_key]) in indexes:
-                self.remove_nans(obs)
                 self.update_obs(mongo_collection, obs, fdic_id_key, date_key)
             else:
                 mongo_collection.insert_one(obs)
@@ -268,12 +297,19 @@ class FDICCompanyInfoETL(FDICDataETLBase):
         comparison_dropkeys = ('_id', 'record_updated')
 
         fdic_code_map = {dct['fdic_certificate_number']:dct for dct in obs_list}
-        cursor = mongo_collection.find({'fdic_certificate_number': {'$in': list(fdic_code_map.keys())}})
+        
+        proto_doc = {'fdic_certificate_number': {'$in': list(fdic_code_map.keys())}}
+        cursor = mongo_collection.find(proto_doc)
 
-        for record in cursor:
-            newrecord = fdic_code_map[record['fdic_certificate_number']]
-            if not compare_observations(comparison_dropkeys, record, newrecord):
-                mongo_collection.insert(newrecord)
+        db_fdic_code_map = {dct['fdic_certificate_number']:dct for dct in cursor}
+
+        for fdic_code, obs in fdic_code_map.items():
+            if fdic_code in db_fdic_code_map.keys():
+                comprecord = db_fdic_code_map[fdic_code]
+                if not compare_observations(comparison_dropkeys, comprecord, obs):
+                    mongo_collection.insert(obs)
+            else:
+                mongo_collection.insert(obs)
 
 
 def compare_observations(dropkeys, dbobs, newobs):
