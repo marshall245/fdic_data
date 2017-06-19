@@ -12,63 +12,6 @@ from copy import copy
 __author__ = 'Marshall Markham'
 
 
-class MDRMInfoETL(object):
-    
-    def __init__(self, filepath):
-        self._filepath = filepath
-        
-    @staticmethod
-    def column_name_transform(cols):
-        """lower case column names and replace spaces with underscores. replace item_name column"""
-        newcols = list(map(lambda strng: strng.replace(' ', '_').lower(), cols))
-        
-        finalcols = list()
-        for col in newcols:
-            if col != 'item_name':
-                finalcols.append(col)
-            else:
-                finalcols.append('description')
-        return finalcols
-
-    @staticmethod
-    def row_transform(row):
-        """transform a row into a nested dictionary"""
-        topkeys = ['mdrm_item', 'description']
-        detailkeys = ['start_date', 'end_date', 'description', 'confidential', 'reporting_forms']
-
-        obs = dict()
-        for key in topkeys:
-            obs[key] = row[key]
-
-        obs['details'] = dict()
-        for key in detailkeys:
-            obs['details'][key] = row[key]
-
-        return obs
-
-    @staticmethod
-    def readfile(filepath):
-        """read in a tab seperated csv file"""
-        return pd.read_csv(filepath, sep='\t')
-
-    def transform(self):
-        """read in and transform a csv file returning a list of dictionaries"""
-        df = self.readfile(self._filepath)
-        df.columns = self.column_name_transform(df.columns)
-        dicts_df = df.apply(self.row_transform, axis=1)
-        dicts_list = list(dicts_df)
-        return dicts_list
-    
-    def load(self, mongo_collection, data):
-        assert mongo_collection.count() == 0
-        mongo_collection.insert_many(data)
-
-    def full_etl(self, mongo_collection):
-        """run a full etl job against a mongo_collection"""
-        transformed = self.transform()
-        self.load(mongo_collection, transformed)
-
-
 class FDICDataETLBase(object):
     
     def __init__(self, filepath, fdic_codes=None):
