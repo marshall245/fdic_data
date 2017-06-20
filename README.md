@@ -31,6 +31,11 @@ Once the containers are built run:
 docker-compose up
 ```
 
+Wait to see the following line at the console log:
+```
+jupyter-app_1  | [I 14:01:18.142 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+```
+
 With the containers built access is available through any web browser at url:
 
 ```http://localhost:5000```
