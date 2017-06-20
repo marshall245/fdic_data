@@ -31,7 +31,7 @@ Once the containers are built run:
 docker-compose up
 ```
 
-With the containers built access is available through the notebook server at url:
+With the containers built access is available through any web browser at url:
 
 ```http://localhost:5000```
 
@@ -49,6 +49,7 @@ Once inside the notebook you can click on 5 different files. One of those files 
 
 The notebooks are meant to demonstrate the document structure and how the the tables may be accessed with increasing ease through different techniques.
 
-NOTE: To run an individual cell, the user may simply select the cell and press <SHIFT> + <ENTER>. Although it may be easier to just go to the kernel drop down at the top of a notebook and select "Restart and Run All"
+NOTE: To run an individual cell, the user may simply select the cell and press ```<SHIFT> + <ENTER>```
+It may be easier, however, to just go to the kernel drop down at the top of a notebook and select "Restart and Run All"
 
 I hope you enjoy the project :-)
